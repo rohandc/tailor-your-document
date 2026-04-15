@@ -7,11 +7,12 @@
 
 ## Overview
 
-Three features are being added to the existing Streamlit multi-page app:
+Three features and Docker containerization are being added to the existing Streamlit multi-page app:
 
 1. **Editable Submission Records** — edit status, notes, and job URL per submission; delete submissions
 2. **Multiple Portfolio Support** — save, name, and switch between multiple base CVs
 3. **Job URL Scraping + Keyword Detection + Suggestions** — scrape job pages, extract keywords, suggest resume rewrites
+4. **Docker Containerization** — single-container setup for local dev and deployment anywhere
 
 All changes are additive. No existing modules are deleted.
 
@@ -180,6 +181,62 @@ Applied → Interviewing → Technical Assessment → Offer → Rejected → Wit
 - "🚀 Generate Tailored CV" button appears below the keywords panel
 - Accepted rewrites are already applied to cv_object before generation begins
 - Job URL from scrape tab (if used) is passed through to submission save
+
+---
+
+## Docker Containerization
+
+### Goal
+Single-container setup that works for both local development and deployment on any container hosting platform.
+
+### `Dockerfile`
+- Base image: `python:3.12-slim` (Debian-based — required for Playwright browser binaries)
+- Build steps:
+  1. Install system dependencies for Playwright (Chromium and its libs)
+  2. Run `playwright install chromium` — adds ~200MB but required for Feature 7 JS fallback
+  3. Install Python dependencies via `pip` from `requirements.txt` (exported from Poetry: `poetry export --without-hashes -f requirements.txt`)
+  4. Copy app source
+  5. Expose port `8501`
+- Entrypoint: `streamlit run app.py --server.port=8501 --server.address=0.0.0.0`
+
+### `docker-compose.yml` (local development)
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./output:/app/output        # persists SQLite DB, portfolios, generated PDFs
+      - ./config.ini:/app/config.ini:ro  # API keys (read-only, never baked into image)
+    restart: unless-stopped
+```
+
+### API Key Handling
+- **Local dev:** `config.ini` is volume-mounted — existing flow unchanged, no code changes needed
+- **Deployment:** Pass `GROQ_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY` as environment variables via the hosting platform's settings UI
+- `support/settings.py` updated to check `os.environ` before falling back to `config.ini`:
+  ```python
+  groq_api_key_value = os.environ.get("GROQ_API_KEY", "")
+  # ... fall back to config.ini if empty
+  ```
+
+### Volume Strategy
+- `./output:/app/output` — single mount covers all persistent data:
+  - `output/cv_submissions.db` (SQLite)
+  - `output/portfolios/` (named portfolio `.pkl` files + index)
+  - `output/` generated PDFs (ephemeral — overwritten per generation, acceptable)
+- `config.ini` mounted read-only for local dev; omitted entirely on deployment (env vars used instead)
+
+### `.dockerignore`
+Excludes: `output/`, `config.ini`, `__pycache__`, `.git`, `**/*.pyc`, `test/`
+
+### Dependency Export
+A `requirements.txt` is generated and committed from Poetry for use in the Docker build:
+```
+poetry export --without-hashes -f requirements.txt -o requirements.txt
+```
+This file is committed to the repo so the Docker build has no Poetry dependency.
 
 ---
 
