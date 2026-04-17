@@ -102,9 +102,7 @@ def render_latex(final_cv, template_name: str = "neo_kim") -> str:
     summary = latex_escape(final_cv.summary or "")
 
     hard_skills = final_cv.hard_skills or []
-    soft_skills = final_cv.soft_skills or []
     hard_skills_str = latex_escape(", ".join(hard_skills))
-    soft_skills_str = latex_escape(", ".join(soft_skills))
 
     experiences = final_cv.experiences or []
     exp_items = [description_to_items(exp.description) for exp in experiences]
@@ -125,9 +123,7 @@ def render_latex(final_cv, template_name: str = "neo_kim") -> str:
         "address": address,
         "summary": summary,
         "hard_skills": hard_skills,
-        "soft_skills": soft_skills,
         "hard_skills_str": hard_skills_str,
-        "soft_skills_str": soft_skills_str,
         "experiences": experiences,
         "exp_items": exp_items,
         "projects": projects,

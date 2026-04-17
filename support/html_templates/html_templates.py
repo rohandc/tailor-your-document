@@ -148,10 +148,6 @@ class CVTemplates:
                         <div class="skills-content">
                             {hard_skills}
                         </div>
-                        <h3>SOFT SKILLS</h3>
-                        <div class="skills-content">
-                            {soft_skills}
-                        </div>
                     </div>
                 </aside>
             </div>
@@ -315,13 +311,6 @@ class CVTemplates:
                     <div class="section">
                         <div class="section-title">Hard Skills</div>
                         <div class="skills-content">{hard_skills}</div>
-                    </div>
-                </div>
-
-                <div class="column">
-                    <div class="section">
-                        <div class="section-title">Soft Skills</div>
-                        <div class="skills-content">{soft_skills}</div>
                     </div>
                 </div>
             </div>

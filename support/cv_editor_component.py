@@ -189,30 +189,12 @@ def render_cv_editor(
                 dtype="string",
             )
         })
-        _soft_seed = pd.DataFrame({
-            "Skill": pd.Series(
-                (initial_cv.soft_skills or []) if initial_cv else [],
-                dtype="string",
-            )
-        })
-
         with st.expander("🛠️ Technical Skills", expanded=True):
             hard_skills_df = st.data_editor(
                 _hard_seed,
                 num_rows="dynamic",
                 use_container_width=True,
                 key=f"{key_prefix}_hard_skills",
-                column_config={
-                    "Skill": st.column_config.TextColumn("Skill", required=False)
-                },
-            )
-
-        with st.expander("🤝 Soft Skills", expanded=False):
-            soft_skills_df = st.data_editor(
-                _soft_seed,
-                num_rows="dynamic",
-                use_container_width=True,
-                key=f"{key_prefix}_soft_skills",
                 column_config={
                     "Skill": st.column_config.TextColumn("Skill", required=False)
                 },
@@ -261,11 +243,6 @@ def render_cv_editor(
         str(s).strip() for s in hard_skills_df["Skill"].tolist()
         if s is not None and not pd.isna(s) and str(s).strip()
     ]
-    soft_skills = [
-        str(s).strip() for s in soft_skills_df["Skill"].tolist()
-        if s is not None and not pd.isna(s) and str(s).strip()
-    ]
-
     final_cv = FinalCurriculum(
         personality=personality,
         job_title=job_title_input or None,
@@ -274,6 +251,6 @@ def render_cv_editor(
         projects=projects,
         education=education,
         hard_skills=hard_skills,
-        soft_skills=soft_skills,
+        soft_skills=[],
     )
     return True, final_cv

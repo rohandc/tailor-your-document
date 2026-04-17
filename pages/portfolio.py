@@ -290,10 +290,6 @@ with tab2:
                     "Hard Skills (comma-separated)",
                     value=", ".join(st.session_state.final_cv.hard_skills or []),
                     key="portfolio_hard_skills")
-                soft_skills_input = st.text_area(
-                    "Soft Skills (comma-separated)",
-                    value=", ".join(st.session_state.final_cv.soft_skills or []),
-                    key="portfolio_soft_skills")
 
         with col2:
             with st.expander("💼 Work Experience", expanded=True):
@@ -337,7 +333,6 @@ with tab2:
 
         if st.button("💾 Save Portfolio", type="primary"):
             st.session_state.final_cv.hard_skills = [s.strip() for s in hard_skills_input.split(",") if s.strip()]
-            st.session_state.final_cv.soft_skills = [s.strip() for s in soft_skills_input.split(",") if s.strip()]
             st.session_state.final_cv.experiences = st.session_state.exps
             st.session_state.final_cv.projects = st.session_state.projs
             st.session_state.final_cv.education = st.session_state.edus

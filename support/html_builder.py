@@ -116,7 +116,6 @@ class CVBuilder:
             'projects': ''.join(self.format_projects(proj) for proj in cv.projects or []),
             'contact_info': self.format_contact_info(cv),
             'hard_skills': self.format_skills_list(cv.hard_skills),
-            'soft_skills': self.format_skills_list(cv.soft_skills),
             'summary': cv.summary or '',
         }
 

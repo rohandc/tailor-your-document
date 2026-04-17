@@ -80,15 +80,11 @@
     <% endif %>
 
     %% LEFT: SKILLS
-    <% if hard_skills or soft_skills %>
+    <% if hard_skills %>
     \sectionheader{Skills}
     <% if hard_skills %>
     {\small\textbf{Technical}}\\[2pt]
-    {\small << hard_skills_str >>}\\[4pt]
-    <% endif %>
-    <% if soft_skills %>
-    {\small\textbf{Soft Skills}}\\[2pt]
-    {\small << soft_skills_str >>}
+    {\small << hard_skills_str >>}
     <% endif %>
     <% endif %>
 
