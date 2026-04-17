@@ -155,6 +155,8 @@ def render_cv_editor(
         # ── Projects ───────────────────────────────────────────────────────
         st.subheader("Projects")
         existing_proj: list = list(initial_cv.projects or []) if initial_cv else []
+        if not existing_proj:
+            existing_proj = [Experience()]
 
         proj_data = []
         for i, proj in enumerate(existing_proj):
@@ -257,11 +259,11 @@ def render_cv_editor(
     ]
     hard_skills = [
         str(s).strip() for s in hard_skills_df["Skill"].tolist()
-        if s is not None and str(s).strip()
+        if s is not None and not pd.isna(s) and str(s).strip()
     ]
     soft_skills = [
         str(s).strip() for s in soft_skills_df["Skill"].tolist()
-        if s is not None and str(s).strip()
+        if s is not None and not pd.isna(s) and str(s).strip()
     ]
 
     final_cv = FinalCurriculum(
