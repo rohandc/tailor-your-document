@@ -88,8 +88,8 @@ with col4:
     st.markdown("*View your application history*")
 
 with col5:
-    st.page_link("pages/latex_resume.py", label="LaTeX Resume", icon="📄")
-    st.markdown("*Build a professional two-column PDF resume*")
+    st.page_link("pages/resume_library.py", label="Resume Library", icon="📚")
+    st.markdown("*Save, preview, and reuse resume drafts + view past submissions*")
 
 st.markdown("---")
 
