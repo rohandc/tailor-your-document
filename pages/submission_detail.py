@@ -5,7 +5,6 @@ from pathlib import Path
 import streamlit as st
 
 from support.cv_editor_component import render_cv_editor
-from support.latex_builder import compile_latex, render_latex
 from support.latex_resume_manager import save_resume
 from support.pdf_preview import show_pdf_pages
 from support.submission_manager import (
