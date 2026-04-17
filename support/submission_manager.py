@@ -226,7 +226,16 @@ def has_submissions():
 
 
 def compile_cv_for_submission(submission_id: int, template_name: str) -> bytes:
-    """Compile a LaTeX CV for the given submission, cache it in the DB, and return PDF bytes."""
+    """
+    Compile a LaTeX CV for the given submission, cache it in the DB, and return PDF bytes.
+
+    Raises ValueError if the submission does not exist.
+    Raises RuntimeError if LaTeX compilation fails (propagated from compile_latex).
+    Unlike other write functions in this module, this function intentionally raises
+    on failure rather than returning a sentinel, because the caller must handle the
+    PDF bytes or the error explicitly.
+    """
+    initialize_db()
     from support.latex_builder import render_latex, compile_latex
 
     cv_object, _, _ = get_submission_objects(submission_id)
@@ -237,11 +246,15 @@ def compile_cv_for_submission(submission_id: int, template_name: str) -> bytes:
     pdf_bytes = compile_latex(latex_source)
 
     with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
+        cursor = conn.execute(
             "UPDATE submissions SET cv_pdf_cache = ?, template_name = ? WHERE id = ?",
             (pdf_bytes, template_name, submission_id),
         )
         conn.commit()
+        if cursor.rowcount == 0:
+            raise ValueError(
+                f"Submission {submission_id} not found; CV compiled but cache not written."
+            )
 
     return pdf_bytes
 
@@ -273,6 +286,7 @@ def generate_cl_pdf_from_submission(submission_id: int) -> tuple:
     Returns (cl_pdf_path, temp_dir) on success, or (None, None) on failure.
     """
     try:
+        initialize_db()
         _, cover_letter_object, _ = get_submission_objects(submission_id)
         if cover_letter_object is None:
             return None, None
