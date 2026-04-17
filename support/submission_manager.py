@@ -32,6 +32,8 @@ def initialize_db():
             "status TEXT DEFAULT 'Applied'",
             "notes TEXT",
             "job_url TEXT",
+            "template_name TEXT DEFAULT 'rohans_format'",
+            "cv_pdf_cache BLOB",
         ]:
             try:
                 conn.execute(f"ALTER TABLE submissions ADD COLUMN {column_def}")
@@ -221,3 +223,70 @@ def has_submissions():
     except Exception as e:
         print(f"Error checking submissions: {e}")
         return False
+
+
+def compile_cv_for_submission(submission_id: int, template_name: str) -> bytes:
+    """Compile a LaTeX CV for the given submission, cache it in the DB, and return PDF bytes."""
+    from support.latex_builder import render_latex, compile_latex
+
+    cv_object, _, _ = get_submission_objects(submission_id)
+    if cv_object is None:
+        raise ValueError(f"Submission {submission_id} not found or has no CV data.")
+
+    latex_source = render_latex(cv_object, template_name=template_name)
+    pdf_bytes = compile_latex(latex_source)
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "UPDATE submissions SET cv_pdf_cache = ?, template_name = ? WHERE id = ?",
+            (pdf_bytes, template_name, submission_id),
+        )
+        conn.commit()
+
+    return pdf_bytes
+
+
+def get_cv_pdf_bytes(submission_id: int) -> tuple:
+    """
+    Return (cached_pdf_bytes, template_name) for a submission.
+    cached_pdf_bytes is None if the CV has never been compiled.
+    """
+    try:
+        initialize_db()
+        with sqlite3.connect(DB_PATH) as conn:
+            row = conn.execute(
+                "SELECT cv_pdf_cache, COALESCE(template_name, 'rohans_format') "
+                "FROM submissions WHERE id = ?",
+                (submission_id,),
+            ).fetchone()
+        if row:
+            return row[0], row[1]
+        return None, "rohans_format"
+    except Exception as e:
+        print(f"Error getting CV PDF bytes: {e}")
+        return None, "rohans_format"
+
+
+def generate_cl_pdf_from_submission(submission_id: int) -> tuple:
+    """
+    Generate a cover-letter PDF only (HTML → xhtml2pdf path).
+    Returns (cl_pdf_path, temp_dir) on success, or (None, None) on failure.
+    """
+    try:
+        _, cover_letter_object, _ = get_submission_objects(submission_id)
+        if cover_letter_object is None:
+            return None, None
+
+        temp_dir = tempfile.mkdtemp(prefix="cv_builder_")
+        cover_letter_builder = CoverLetterBuilder()
+        cl_html = cover_letter_builder.build_html_from_cover_letter(
+            cover_letter_object, "1", temp_dir
+        )
+        cl_pdf_path = os.path.join(temp_dir, f"cover_letter_{submission_id}.pdf")
+        with open(cl_pdf_path, "wb") as f:
+            pisa.CreatePDF(cl_html, dest=f)
+
+        return cl_pdf_path, temp_dir
+    except Exception as e:
+        print(f"Error generating CL PDF: {e}")
+        return None, None
