@@ -597,6 +597,23 @@ a4_style = """
 </div>
 """
 
+_IFRAME_RESET_CSS = """
+<style>
+  html, body {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+  }
+</style>
+"""
+
+
+def inject_iframe_reset(html: str) -> str:
+    """Inject a white-background CSS reset so Streamlit's dark theme
+    doesn't bleed into st.components.v1.html iframes."""
+    if "</head>" in html:
+        return html.replace("</head>", _IFRAME_RESET_CSS + "</head>", 1)
+    return _IFRAME_RESET_CSS + html
+
 
 def render_submissions_html(submissions):
     # Start HTML
@@ -604,52 +621,43 @@ def render_submissions_html(submissions):
     <html>
       <head>
         <style>
-          body {
+          html, body {
+            background-color: #ffffff;
+            color: #111827;
             font-family: 'Segoe UI', sans-serif;
-            padding: 0;
+            padding: 8px;
             margin: 0;
           }
           table {
             width: 100%;
             border-collapse: collapse;
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
           }
-          thead {
+          thead tr {
             background-color: #f3f4f6;
-            font-weight: bold;
+          }
+          th {
+            padding: 10px 16px;
             text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
           }
-          th, td {
-            padding: 12px 16px;
+          td {
+            padding: 10px 16px;
             border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+            color: #1f2937;
+            background-color: #ffffff;
           }
-          tr:hover {
+          tr:last-child td {
+            border-bottom: none;
+          }
+          tbody tr:hover td {
             background-color: #f9fafb;
-          }
-          .download-btn {
-            display: inline-block;
-            background-color: #2563eb;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 14px;
-            border: none;
-            cursor: pointer;
-            margin: 2px;
-            transition: background-color 0.2s;
-          }
-          .download-btn:hover {
-            background-color: #1e40af;
-          }
-          .download-btn:active {
-            background-color: #1e3a8a;
-          }
-          .download-btn:disabled {
-            background-color: #9ca3af;
-            cursor: not-allowed;
           }
         </style>
       </head>
@@ -659,7 +667,7 @@ def render_submissions_html(submissions):
             <tr>
               <th>🏢 Company</th>
               <th>💼 Job Title</th>
-              <th>📅 Generation Date</th>
+              <th>📅 Date</th>
             </tr>
           </thead>
           <tbody>
@@ -667,7 +675,6 @@ def render_submissions_html(submissions):
 
     for id_, company, pos, date in submissions:
         date_str = date.split("T")[0]
-        # Create visual download buttons (these will be replaced by Streamlit buttons)
         html += f"""
             <tr>
               <td>{company}</td>
@@ -676,4 +683,10 @@ def render_submissions_html(submissions):
             </tr>
         """
 
+    html += """
+          </tbody>
+        </table>
+      </body>
+    </html>
+    """
     return html

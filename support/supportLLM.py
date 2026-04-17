@@ -47,10 +47,10 @@ Clarity, honesty, and alignment with both the job and the user’s real experien
 system_prompt_jd_extraction = """
 You are an intelligent information extraction assistant. Your task is to extract structured data from job descriptions. Specifically, you must extract the following fields:
 
-* **job\_title**: The job title or role being advertised. This is typically a phrase like "Software Engineer", "Marketing Manager", or "Data Analyst". 
+* **job_title**: The job title or role being advertised. This is typically a phrase like "Software Engineer", "Marketing Manager", or "Data Analyst".
 It often appears at the beginning of the job description or in a heading.
 
-* **company\_name**: The name of the company offering the job. It might appear in the introduction, signature, or company overview sections.
+* **company_name**: The name of the company offering the job. It might appear in the introduction, signature, or company overview sections.
 Do not confuse it with recruitment agencies unless clearly indicated.
 
 If a field cannot be confidently determined from the text, return `null` for that field. Avoid making assumptions or hallucinations. 

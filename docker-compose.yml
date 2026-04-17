@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./output:/app/output          # persists SQLite DB, portfolios, generated PDFs
+      - ./config.ini:/app/config.ini:ro  # API keys (read-only; omit on deployment)
+      - ./support/latex_templates:/app/support/latex_templates  # live-reload LaTeX templates
+    restart: unless-stopped
+    # environment:
+    #   GROQ_API_KEY: your_key_here
+    #   OPENAI_API_KEY: your_key_here
+    #   GEMINI_API_KEY: your_key_here

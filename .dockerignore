@@ -1,0 +1,14 @@
+output/
+config.ini
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+venv/
+.venv/
+test/
+docs/
+*.md
+uv.lock

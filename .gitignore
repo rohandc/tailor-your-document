@@ -15,3 +15,4 @@ output
 !test/*.md
 !test/*.html
 *.db
+*.idea/

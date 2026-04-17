@@ -62,7 +62,7 @@ if config_manager.has_config():
 
 # Quick Action Buttons
 st.subheader("🚀 Quick Actions")
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     st.page_link("pages/manage_settings.py", label="Manage Settings", icon="⚙️")
@@ -87,6 +87,10 @@ with col3:
 with col4:
     st.page_link("pages/my_submissions.py", label="My Submissions", icon="📬")
     st.markdown("*View your application history*")
+
+with col5:
+    st.page_link("pages/latex_resume.py", label="LaTeX Resume", icon="📄")
+    st.markdown("*Build a professional two-column PDF resume*")
 
 st.markdown("---")
 

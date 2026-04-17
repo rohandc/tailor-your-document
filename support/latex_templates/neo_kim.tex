@@ -1,0 +1,168 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{microtype}
+
+% Color definitions
+\definecolor{navyblue}{HTML}{2E4057}
+\definecolor{lightgray}{HTML}{F5F5F5}
+\definecolor{rulegray}{HTML}{CCCCCC}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    urlcolor=navyblue,
+    linkcolor=navyblue,
+    hidelinks
+}
+
+% No page numbers
+\pagestyle{empty}
+
+% Tight spacing
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{0pt}
+
+% Section heading style
+\newcommand{\sectionheader}[1]{%
+    \vspace{6pt}%
+    {\color{navyblue}\textsc{\textbf{#1}}}%
+    \vspace{1pt}%
+    {\color{rulegray}\hrule height 0.6pt}%
+    \vspace{4pt}%
+}
+
+% Compact itemize
+\newenvironment{cvitems}{%
+    \begin{itemize}[leftmargin=1em, itemsep=1pt, parsep=0pt, topsep=2pt]%
+}{%
+    \end{itemize}%
+}
+
+\begin{document}
+
+%% ── HEADER ──────────────────────────────────────────────────────────────────
+\begin{center}
+    {\Huge\color{navyblue}\textbf{<< name >> << surname >>}}\\[3pt]
+    {\large\textit{<< job_title >>}}
+\end{center}
+
+\vspace{6pt}
+{\color{rulegray}\hrule height 0.8pt}
+\vspace{8pt}
+
+%% ── TWO-COLUMN BODY ─────────────────────────────────────────────────────────
+\noindent
+\begin{minipage}[t]{0.30\textwidth}
+
+    %% LEFT: CONTACT
+    \sectionheader{Contact}
+    <% if email %>
+    \href{mailto:<< email >>}{\small << email >>}\\[2pt]
+    <% endif %>
+    <% if telephone %>
+    \small << telephone >>\\[2pt]
+    <% endif %>
+    <% if linkedin %>
+    \href{<< linkedin >>}{\small LinkedIn}\\[2pt]
+    <% endif %>
+    <% if address %>
+    \small << address >>
+    <% endif %>
+
+    %% LEFT: SKILLS
+    <% if hard_skills or soft_skills %>
+    \sectionheader{Skills}
+    <% if hard_skills %>
+    {\small\textbf{Technical}}\\[2pt]
+    {\small << hard_skills_str >>}\\[4pt]
+    <% endif %>
+    <% if soft_skills %>
+    {\small\textbf{Soft Skills}}\\[2pt]
+    {\small << soft_skills_str >>}
+    <% endif %>
+    <% endif %>
+
+    %% LEFT: EDUCATION
+    <% if education %>
+    \sectionheader{Education}
+    <% for edu in education %>
+    {\small\textbf{<< edu.title | e >>}}\\
+    {\small\textit{<< edu.school_name | e >>}}\\
+    {\tiny\color{navyblue}<< edu.start_date | e >> -- << edu.end_date | e >>}
+    <% if edu.description %>
+    \begin{cvitems}
+        <% for item in edu_items[loop.index0] %>
+        \item {\small << item | e >>}
+        <% endfor %>
+    \end{cvitems}
+    <% endif %>
+    \vspace{4pt}
+    <% endfor %>
+    <% endif %>
+
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.68\textwidth}
+
+    %% RIGHT: SUMMARY
+    <% if summary %>
+    \sectionheader{Summary}
+    {\small << summary | e >>}
+    \vspace{4pt}
+    <% endif %>
+
+    %% RIGHT: EXPERIENCE
+    <% if experiences %>
+    \sectionheader{Work Experience}
+    <% for exp in experiences %>
+    \noindent
+    \begin{tabularx}{\linewidth}{@{}X r@{}}
+        {\small\textbf{<< exp.title | e >>}} & {\tiny\color{navyblue}<< exp.start_date | e >> -- << exp.end_date | e >>}\\
+        {\small\textit{<< exp.company | e >>}} & \\
+    \end{tabularx}
+    <% if exp.description %>
+    \begin{cvitems}
+        <% for item in exp_items[loop.index0] %>
+        \item {\small << item | e >>}
+        <% endfor %>
+    \end{cvitems}
+    <% endif %>
+    \vspace{4pt}
+    <% endfor %>
+    <% endif %>
+
+    %% RIGHT: PROJECTS
+    <% if projects %>
+    \sectionheader{Projects}
+    <% for proj in projects %>
+    \noindent
+    \begin{tabularx}{\linewidth}{@{}X r@{}}
+        {\small\textbf{<< proj.title | e >>}} & {\tiny\color{navyblue}<< proj.start_date | e >> -- << proj.end_date | e >>}\\
+        <% if proj.company %>
+        {\small\textit{<< proj.company | e >>}} & \\
+        <% endif %>
+    \end{tabularx}
+    <% if proj.description %>
+    \begin{cvitems}
+        <% for item in proj_items[loop.index0] %>
+        \item {\small << item | e >>}
+        <% endfor %>
+    \end{cvitems}
+    <% endif %>
+    \vspace{4pt}
+    <% endfor %>
+    <% endif %>
+
+\end{minipage}
+
+\end{document}
