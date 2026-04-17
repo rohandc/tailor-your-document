@@ -1,6 +1,5 @@
 import streamlit as st
-from support.submission_manager import get_all_submissions
-from support.html_builder import render_submissions_html
+from support.submission_manager import get_all_submissions_with_metadata
 from support.file_manager import FileManager
 from support.config_manager import ConfigManager
 import os
@@ -131,24 +130,33 @@ st.markdown("---")
 # Recent Submissions
 st.subheader("📬 Recent Applications")
 
+STATUS_BADGE = {
+    "Applied": "🔵", "Interviewing": "🟡", "Technical Assessment": "🟠",
+    "Offer": "🟢", "Rejected": "🔴", "Withdrawn": "⚪",
+}
+
 try:
-    submissions = get_all_submissions()
-    
-    if not submissions:
-        if has_portfolio:
-            st.info(
-                "No applications yet. Start creating tailored applications for specific jobs!"
-            )
-        else:
-            st.info(
-                "No applications yet. Start by configuring your settings and creating your portfolio!"
-            )
+    recent = get_all_submissions_with_metadata()[:5]
+    if not recent:
+        st.info("No applications yet. Create your first tailored application!")
     else:
-        html_content = render_submissions_html(submissions[:5])
-        st.components.v1.html(html_content, height=300, scrolling=True)
-        
+        cols = st.columns([2, 2, 1.4, 1.6, 1])
+        for h, c in zip(["**Company**", "**Position**", "**Date**", "**Status**", ""], cols):
+            c.markdown(h)
+        for sub in recent:
+            sub_id, company, position, date, status = sub[0], sub[1], sub[2], sub[3], sub[4]
+            badge = STATUS_BADGE.get(status, "🔵")
+            row = st.columns([2, 2, 1.4, 1.6, 1])
+            row[0].markdown(company)
+            row[1].markdown(position)
+            row[2].markdown(date.split("T")[0])
+            row[3].markdown(f"{badge} {status}")
+            if row[4].button("✏️", key=f"home_edit_{sub_id}", help="View"):
+                st.query_params["id"] = str(sub_id)
+                st.switch_page("pages/submission_detail.py")
+        st.page_link("pages/my_submissions.py", label="View all submissions →")
 except Exception as e:
-    st.info("No applications yet. Start by configuring your settings and creating your portfolio!")
+    st.info("No applications yet.")
     print(f"Error loading submissions: {e}")
 
 # Stats Section
@@ -158,7 +166,7 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     try:
-        submission_count = len(get_all_submissions()) if 'submissions' in locals() else 0
+        submission_count = len(get_all_submissions_with_metadata())
         st.metric("Total Applications", submission_count)
     except:
         st.metric("Total Applications", 0)
