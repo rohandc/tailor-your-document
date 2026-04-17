@@ -5,7 +5,12 @@ import time
 import streamlit as st
 from support.extractor import InformationExtractor
 from support.load_models import load_openAI_model, load_gemini_model
-from support.html_builder import render_editable_cv, render_editable_cover_letter, inject_iframe_reset
+from support.html_builder import render_editable_cover_letter, inject_iframe_reset
+from pathlib import Path
+from support.cv_editor_component import render_cv_editor
+from support.latex_builder import render_latex, compile_latex
+from support.pdf_preview import show_pdf_pages
+from support.latex_resume_manager import list_resumes, load_resume
 from support.file_manager import FileManager
 from support.settings import TESTING
 from support.portfolio_manager import (
@@ -366,25 +371,82 @@ if st.button("🪄 Generate Tailored Documents", type="primary"):
 if "generated_html" in st.session_state and "generated_html_cover_letter" in st.session_state:
     st.subheader("✏️ Edit & Preview Documents")
 
+    # Template selector (outside form so it doesn't force re-render on change)
+    _templates_dir = Path(__file__).parent.parent / "support" / "latex_templates"
+    _available = sorted(p.stem for p in _templates_dir.glob("*.tex"))
+    _default_idx = _available.index("rohans_format") if "rohans_format" in _available else 0
+    ns_template = st.selectbox(
+        "🎨 LaTeX Template",
+        options=_available,
+        index=_default_idx,
+        key="ns_template",
+    )
+
+    # Optional: load a saved resume from the library as starting point
+    _saved_resumes = list_resumes()
+    if _saved_resumes:
+        _lib_options = ["— Use generated CV —"] + [e["name"] for e in _saved_resumes]
+        _lib_choice = st.selectbox(
+            "📚 Or load a base from Resume Library",
+            options=_lib_options,
+            key="ns_lib_choice",
+        )
+        if _lib_choice != _lib_options[0]:
+            if st.button("📥 Load from Library", key="ns_load_lib_btn"):
+                loaded = load_resume(_lib_choice)
+                if loaded:
+                    st.session_state["final_cv_content"] = loaded
+                    st.toast(f"Loaded '{_lib_choice}' as CV base")
+                    st.rerun()
+
     tab1, tab2 = st.tabs(["📄 CV Editor & Preview", "✉️ Cover Letter Editor & Preview"])
 
     with tab1:
-        col1, col2 = st.columns([0.4, 0.6], gap="large")
-        with col1:
-            st.markdown("**📝 Edit Your CV**")
-            render_editable_cv(st.session_state.final_cv_content)
-        with col2:
+        form_col, preview_col = st.columns([1, 1])
+
+        with form_col:
+            ns_submitted, ns_cv = render_cv_editor(
+                initial_cv=st.session_state.get("final_cv_content"),
+                key_prefix="ns_cv",
+                submit_label="Compile CV Preview",
+            )
+
+        if ns_submitted and ns_cv:
+            st.session_state["final_cv_content"] = ns_cv
+            st.session_state["ns_template_used"] = ns_template
+            try:
+                _latex = render_latex(ns_cv, template_name=ns_template)
+                _pdf = compile_latex(_latex)
+                st.session_state["ns_cv_pdf_bytes"] = _pdf
+                st.session_state["ns_cv_latex_source"] = _latex
+            except RuntimeError as exc:
+                st.error(f"LaTeX compilation error:\n\n```\n{str(exc)}\n```")
+                st.session_state["ns_cv_pdf_bytes"] = None
+
+        with preview_col:
             st.markdown("**👀 CV Preview**")
-            st.components.v1.html(inject_iframe_reset(st.session_state.generated_html), height=1300, scrolling=True)
+            _pdf_preview = st.session_state.get("ns_cv_pdf_bytes")
+            _latex_src = st.session_state.get("ns_cv_latex_source")
+            if _pdf_preview:
+                with st.expander("📝 LaTeX Source", expanded=False):
+                    if _latex_src:
+                        st.code(_latex_src, language="latex")
+                show_pdf_pages(_pdf_preview)
+            else:
+                st.info("Click **Compile CV Preview** to render your CV as a PDF.")
 
     with tab2:
-        col1, col2 = st.columns([0.4, 0.6], gap="large")
-        with col1:
+        cl_left, cl_right = st.columns([0.4, 0.6], gap="large")
+        with cl_left:
             st.markdown("**📝 Edit Your Cover Letter**")
             render_editable_cover_letter(st.session_state.final_cover_letter_content)
-        with col2:
+        with cl_right:
             st.markdown("**👀 Cover Letter Preview**")
-            st.components.v1.html(inject_iframe_reset(st.session_state.generated_html_cover_letter), height=1300, scrolling=True)
+            st.components.v1.html(
+                inject_iframe_reset(st.session_state.get("generated_html_cover_letter", "")),
+                height=1300,
+                scrolling=True,
+            )
 
     st.subheader("💾 Save & Download")
 
@@ -423,13 +485,26 @@ if "generated_html" in st.session_state and "generated_html_cover_letter" in st.
                         st.session_state.information_extractor.create_pdf()
                         st.session_state.is_new_submission = False
                         st.session_state.current_submission_id = "new"
-                        # Pre-fill job URL if scraped
-                        if st.session_state.get("scraped_job_url"):
-                            from support.submission_manager import get_all_submissions, update_submission_metadata
-                            all_subs = get_all_submissions()
-                            if all_subs:
-                                latest_id = all_subs[-1][0]
-                                update_submission_metadata(latest_id, "Applied", "", st.session_state.scraped_job_url)
+                        from support.submission_manager import (
+                            get_all_submissions,
+                            update_submission_metadata,
+                            compile_cv_for_submission,
+                        )
+                        all_subs = get_all_submissions()
+                        if all_subs:
+                            latest_id = all_subs[-1][0]
+                            st.session_state.current_submission_id = latest_id
+                            if st.session_state.get("scraped_job_url"):
+                                update_submission_metadata(
+                                    latest_id, "Applied", "",
+                                    st.session_state.scraped_job_url,
+                                )
+                            _tmpl = st.session_state.get("ns_template_used", "rohans_format")
+                            if st.session_state.get("final_cv_content"):
+                                try:
+                                    compile_cv_for_submission(latest_id, _tmpl)
+                                except Exception:
+                                    pass  # non-fatal — can recompile from detail page
                         st.success("✅ New submission created in database!")
                     else:
                         from support.submission_manager import update_submission, get_all_submissions
